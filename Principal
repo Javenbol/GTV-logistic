@@ -1,1 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta name="Author" content="">
+    <link rel="stylesheet" href="/principal/principal.css?v=<?= Date.now() ?>">
 
+    <link rel="icon" href="imagenes/lol.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <title>GVT Logistics</title>
+    <script src="principal/principal.js"></script>
+    <script type="module">
+import { io } from 'https://cdn.socket.io/4.3.2/socket.io.esm.min.js';
+
+// Generar o recuperar clientId persistente
+let clientId = localStorage.getItem('clientId');
+if (!clientId) {
+  clientId = crypto.randomUUID();
+  localStorage.setItem('clientId', clientId);
+}
+
+// Conectar al servidor con clientId
+const socket = io({
+  auth: { clientId }
+});
+
+const form = document.getElementById('chat-form');
+const input = document.getElementById('chat-input');
+const messages = document.getElementById('messages');
+const chat_messages = document.getElementById('chat-messages');
+
+// Scroll automático al final
+function scrollToBottom() {
+  chat_messages.scrollTop = chat_messages.scrollHeight;
+}
+
+// Enviar mensaje al servidor
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (input.value) {
+    socket.emit('chat message', input.value);
+    input.value = '';
+    scrollToBottom();
+  }
+});
+
+// Recibir mensaje en tiempo real
+socket.on('chat message', ({ socketId, msg, from }) => {
+  // Mostrar solo mensajes del cliente actual o del soporte
+  if (socketId !== clientId && from !== 'soporte') return;
+
+  const clase = from === 'soporte' ? 'message__soporte' : 'message__usuario';
+  const item = `<li class="${clase}">${msg}</li>`;
+  messages.insertAdjacentHTML('beforeend', item);
+  scrollToBottom();
+});
+
+// Solicitar historial de mensajes al conectar
+socket.emit('load messages');
+
+// Cargar historial desde el servidor
+socket.on('load messages', (data) => {
+  messages.innerHTML = ''; // Limpia mensajes duplicados
+
+  data.forEach((row) => {
+    const hora = new Date(row.fecha).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    // Usa una clase distinta según el emisor
+    const clase = row.emisor === 'soporte' ? 'message__soporte' : 'message__usuario';
+
+    const item = `<li class="${clase}">
+      ${row.contenido}
+    <small class="li__hora">${hora}</small>
+    </li>`;
+
+    messages.insertAdjacentHTML('beforeend', item);
+});
+
+scrollToBottom();
+});
+</script>
+</head>
+<body id="body">
+    <div id="menu" class="nav__menu">
+        <div class="menu__links">
+            <a class="links__elementos" href="https://www.gvtlogistics.com.mx">Inicio</a>
+            <a class="links__elementos" href="#">Aduanas</a>
+            <a class="links__elementos" href="#">Almacenaje</a>
+            <a class="links__elementos" href="#">Transporte</a>
+            <a class="links__elementos elementos--registro" href="https://www.gvtlogistics.com.mx/contacta">Contáctanos</a>
+        </div> 
+    </div>
+    <div id="boton__chat" onclick="toggleChat()" class="body_boton">
+        <img class="boton--img" src="imagenes/icono_chat.png" alt="Ayuda">
+        </div>
+        <div id="chat" class="chat">
+    <div id="chat-header">
+            <div id="soporte">Soporte</div>
+            <div class="chat__button" onclick="toggleChat()">x</div>
+    </div>
+    <div id="chat-messages">
+        <ul id="messages"></ul>
+    </div>
+    <form id="chat-form">
+    <input type="text" autocomplete="off" id="chat-input"  placeholder="Escribe tu mensaje..." required />
+    <button id="chat__button" type="submit">→</button>
+    
+    </form>
+</div>
+    <header class="body__header">
+        <nav class="header__nav">
+            <div class="nav__logo">
+                <img class="logo__img" src="imagenes/FullLogo_NoBuffer.png" alt="logo">
+            </div>
+            <div class="nav__links">
+                <a class="links__elementos" href="https://www.gvtlogistics.com.mx">Inicio</a>
+                <a class="links__elementos" href="#">Aduanas</a>
+                <a class="links__elementos" href="#">Almacenaje</a>
+                <a class="links__elementos" href="#">Transporte</a>
+                <a class="links__elementos elementos--registro" href="https://www.gvtlogistics.com.mx/contacta">Contáctanos</a>
+            </div>
+            <button class="nav__boton" onclick="menu()">≡</button>
+        </nav>
+    </header>
+    <article class="body__article">
+        <aside class="article__aside">
+            <h1 class="aside__h1">GTV Logistics</h1>
+            <p class="aside__p">Transporte Multimodal Internacional. Soluciones personalizadas puerta a puerta. Coordinación logística aduanera integral eficiente. Visibilidad operativa y comunicación constante. Atención profesional y servicio confiable.</p>
+            <button type="button" class="aside__button" onclick="window.location.href='https://www.gvtlogistics.com.mx/contacta';">COTIZA AQUÍ</button>
+        </aside>
+    </article>
+    <article class="body__article2">
+        <aside>
+            <p class="aside__p">Somos una empresa mexicana especializada en logística aduanera integral desde y hacia Centroamérica. Ofrecemos servicios de transporte terrestre (LTL y FTL), aéreo y marítimo (FCL y LCL), así como almacenaje, consolidación/desconsolidación de mercancías y gestión aduanal a través de prestadores de servicios certificados.</p>
+            <p class="aside__p">Nuestra fortaleza radica en la atención personalizada, tiempos de respuesta ágiles y soluciones logísticas flexibles, adaptadas a las necesidades reales de cada cliente.</p>
+        </aside>
+        <aside class="article2__aside">
+            <div class="aside__seccion">
+                <p class="seccion__titulo">Cotiza vía E-mail:</p>
+                <a class="aside__p p--link" href="mailto:contacto@gvtlogistics.com.mx">contacto@gvtlogistics.com.mx</a>
+            </div>
+        </aside>
+    </article>
+    <article class="body__article3">
+        <h2 class="article__h2">
+            Logística Integral Eficiente
+        </h2>
+        <aside class="article3__aside">
+            <div class="aside__div">
+                <img class="div__img" src="imagenes/aduana1.jpg" alt="imagen">
+                <p class="aside__p p--blanco">Ofrecemos servicios de almacenaje y transporte internacional adaptados a sus necesidades específicas.</p>
+            </div>
+            <div id="textolargo"  class="aside__div">
+                <img class="div__img" src="imagenes/avion.jpg" alt="imagen">
+                <p class="aside__p p--blanco">Nuestro equipo de profesionales se encargan además del agenciamiento aduanal para facilitar con eficiencia sus operaciones de comercio exterior y comercio internacional.</p>
+            </div>
+            <div class="aside__div">
+                <img class="div__img ajuste" src="imagenes/transporte.jpeg" alt="imagen">
+                <p class="aside__p p--blanco">Garantizamos seguridad y eficiencia en cada etapa de la cadena de suministro.</p>
+            </div>
+        </aside>
+    </article>
+    <article class="body__article1 article4--fondo">
+        <div class="article__aside aside--opinion" >
+            <h2 class="article__h2 h2--opinion">
+                Opiniones de clientes:
+            </h2>
+            <aside class="article4__aside">
+            <div class="aside__div">
+                <p class="aside__p p--blanco">
+                    "Nosotros manejamos operaciones complejas y nos sorprende la rapidez del despacho aduanal de nuestra mercancía, así sean refacciones o maquinaria."
+                </p>
+                <p class="aside__p p--blanco">
+                    -Cliente
+                </p> 
+                <img class="div__img--opinion" src="imagenes/imagen 6.png" alt="estrellas">             
+            </div>
+            <div class="aside__div">
+                <p class="aside__p p--blanco">
+                    "En mi primera importación corrigieron la fracción arancelaria de mi mercancía que resultó estar libre de arancel, y que con mi agente anterior pagaba al 20%."
+                </p>
+                <p class="aside__p p--blanco">
+                    -Cliente
+                </p> 
+                <img class="div__img--opinion" src="imagenes/imagen 6.png" alt="estrellas">            
+            </div>
+            <div class="aside__div">
+                <p id="ajuste2" class="aside__p p--blanco">
+                    "Llevamos más de 15 años trabajando con apoyo de esta empresa y estamos muy contentos. Ellos se encargan prácticamente de todo, incluyendo, consultas de clasificación arancelaria, cumplimiento de NOM´s y trámites de permisos especiales."
+                </p>
+                <p class="aside__p p--blanco">
+                    -Cliente
+                </p>
+                <img class="div__img--opinion" src="imagenes/imagen 6.png" alt="estrellas">            
+            </div>
+        </aside>
+        </div>
+        
+    </article>
+    <footer class="body__footer">
+        <nav class="footer__Fnav">
+        <div class="Fnav__seccion aside__seccion">
+            <p class="seccion__titulo">Contacto:</p>
+                <a class="aside__p p--link" href="tel:+529621514154">+52 962 151 4154</a>
+                <a class="aside__p p--link" href="mailto:contacto@gvtlogistics.com.mx">contacto@gvtlogistics.com.mx</a>
+        </div>
+        </nav>
+    </footer>
+</body>
+</html>
